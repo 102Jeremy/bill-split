@@ -562,17 +562,31 @@ document.addEventListener('DOMContentLoaded', () => {
 // ─── File Handling ────────────────────────────────────────
 function handleFile(file) {
   if (!file) return;
+  state.fileName = file.name;
   const reader = new FileReader();
   reader.onload = (e) => {
-    const result = e.target.result;
-    state.imageBase64 = result.split(',')[1];
-    state.imageType = file.type || 'image/jpeg';
-    state.fileName = file.name;
-    show('stepPreview');
-    hide('stepUpload');
-    document.getElementById('imgPreview').src = result;
-    document.getElementById('imgFileName').textContent = file.name;
-    hide('errorBox');
+    const img = new Image();
+    img.onload = () => {
+      // Convert to JPEG via canvas (ensures API-compatible format for HEIC, WebP, etc.)
+      const MAX = 1600;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const jpeg = canvas.toDataURL('image/jpeg', 0.92);
+      state.imageBase64 = jpeg.split(',')[1];
+      state.imageType = 'image/jpeg';
+      show('stepPreview');
+      hide('stepUpload');
+      document.getElementById('imgPreview').src = jpeg;
+      document.getElementById('imgFileName').textContent = file.name;
+      hide('errorBox');
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -645,7 +659,11 @@ Rules:
       })
     });
 
-    if (!response.ok) throw new Error(`API error ${response.status}`);
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      const msg = errBody?.error?.message || `HTTP ${response.status}`;
+      throw new Error(msg);
+    }
     const data = await response.json();
     const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
     const clean = text.replace(/```json|```/g, '').trim();
