@@ -668,8 +668,6 @@ Rules:
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': window.location.href,
-        'X-Title': 'Bill Splitter'
       },
       body: JSON.stringify({
         model: 'openrouter/free',
