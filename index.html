@@ -417,6 +417,53 @@
     font-size: 13px; color: #8B1A1A; margin-bottom: 12px;
   }
 
+  /* Multi-image preview */
+  .preview-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 10px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+    position: relative;
+  }
+  .preview-card .img-preview {
+    width: 56px; height: 72px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+  }
+  .preview-remove {
+    position: absolute; top: 6px; right: 6px;
+    background: var(--surface2); border: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    font-size: 10px; cursor: pointer;
+    color: var(--text2); line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .preview-remove:hover { background: #F5B5B5; color: #8B1A1A; }
+  .add-more-card {
+    background: var(--surface);
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    min-width: 120px;
+    min-height: 100px;
+    transition: all 0.15s;
+    color: var(--text2);
+  }
+  .add-more-card:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Reset link */
   .reset-btn {
     background: none; border: none; font-family: inherit;
@@ -445,58 +492,28 @@
     <button class="reset-btn" id="resetBtn" onclick="resetApp()">Start over</button>
   </div>
 
-  <!-- API Key -->
-  <div id="apiKeyBar" style="background:var(--surface);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-    <span style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;">OpenRouter Key</span>
-    <input id="apiKeyInput" type="password" placeholder="sk-or-v1-..." autocomplete="off" spellcheck="false"
-      style="flex:1;min-width:180px;padding:7px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-family:'DM Mono',monospace;font-size:13px;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s;"
-      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
-      oninput="saveKey(this.value)">
-    <span style="font-size:12px;color:var(--text3);">Free — no credit card needed. <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--accent);text-decoration:none;">Get one →</a></span>
-  </div>
-
-  <!-- Proxy URL -->
-  <div style="background:var(--surface);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-    <span style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;">Proxy URL</span>
-    <input id="proxyUrlInput" type="text" placeholder="https://your-worker.your-name.workers.dev (optional)" autocomplete="off" spellcheck="false"
-      style="flex:1;min-width:180px;padding:7px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-family:'DM Mono',monospace;font-size:13px;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s;"
-      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
-      oninput="saveProxyUrl(this.value)">
-    <span style="font-size:12px;color:var(--text3);">If direct calls fail. <a href="https://developers.cloudflare.com/workers/get-started/guide/" target="_blank" style="color:var(--accent);text-decoration:none;">Setup guide →</a></span>
-  </div>
-
   <!-- Step 1: Upload -->
   <div id="stepUpload">
     <div class="upload-zone" id="dropZone">
-      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this.files[0])">
+      <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFiles(this.files)">
       <div class="upload-icon">📷</div>
-      <h3>Upload your receipt</h3>
-      <p>Take a photo or upload an image<br>Supports JPG, PNG, HEIC</p>
+      <h3>Upload your receipts</h3>
+      <p>Drag & drop or tap to select one or more images<br>Supports JPG, PNG, HEIC</p>
     </div>
   </div>
 
   <!-- Step 2: Preview & Scan -->
   <div id="stepPreview" class="hidden">
-    <div class="img-preview-wrap">
-      <img id="imgPreview" class="img-preview" alt="Receipt">
-      <div class="img-info">
-        <h4>Receipt ready</h4>
-        <p id="imgFileName" style="margin-bottom:8px;"></p>
-        <p style="font-size:13px;color:var(--text2)">AI will scan items, prices, and taxes from this receipt.</p>
-        <button class="btn-scan" id="scanBtn" onclick="scanReceipt()">
-          <span>✨</span> Scan Receipt
-        </button>
-      </div>
-    </div>
-    <div id="errorBox" class="error-box hidden"></div>
-  </div>
-
-  <!-- Step 3: Scanning -->
-  <div id="stepScanning" class="hidden">
-    <div class="scanning-wrap">
-      <div class="spinner"></div>
-      <p style="font-weight:500;margin-bottom:4px">Reading your receipt...</p>
-      <p style="color:var(--text2);font-size:13px">Extracting items and prices</p>
+    <div id="previewGrid" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="btn-scan" id="scanAllBtn" onclick="scanAll()">
+        ✨ Scan Receipts
+      </button>
+      <button class="btn-scan hidden" id="proceedBtn"
+        style="background:var(--text2);"
+        onclick="proceedToAssign()">
+        Assign items →
+      </button>
     </div>
   </div>
 
@@ -549,66 +566,54 @@ const COLORS = [
 ];
 
 let state = {
-  imageBase64: null,
-  imageType: null,
-  fileName: null,
-  receipt: null,   // { restaurant, items, subtotal, service_charge_pct, service_charge_amt, tax_pct, tax_amt, grand_total }
+  images: [],      // [{ id, base64, fileName, previewSrc, status: 'pending'|'scanning'|'done'|'error', receipt }]
+  receipt: null,   // merged receipt
   people: [],
-  assignments: {}  // itemId -> [personId, ...]
+  assignments: {}
 };
 
-// ─── API Key ──────────────────────────────────────────────
-function saveKey(val) {
-  try { localStorage.setItem('anthropic_key', val); } catch(e) {}
-}
-function loadKey() {
-  try { return localStorage.getItem('anthropic_key') || ''; } catch(e) { return ''; }
-}
-function saveProxyUrl(val) {
-  try { localStorage.setItem('proxy_url', val); } catch(e) {}
-}
-function loadProxyUrl() {
-  try { return localStorage.getItem('proxy_url') || ''; } catch(e) { return ''; }
-}
-document.addEventListener('DOMContentLoaded', () => {
-  const k = loadKey();
-  if (k) document.getElementById('apiKeyInput').value = k;
-  const p = loadProxyUrl();
-  if (p) document.getElementById('proxyUrlInput').value = p;
-});
+// ─── Config ───────────────────────────────────────────────
+const PROXY_URL = 'https://bill-splitter.ardienjeremy.workers.dev/';
+// ─────────────────────────────────────────────────────────
 
 // ─── File Handling ────────────────────────────────────────
-function handleFile(file) {
-  if (!file) return;
-  state.fileName = file.name;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      // Convert to JPEG via canvas (ensures API-compatible format for HEIC, WebP, etc.)
-      const MAX = 600;
-      let w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else { w = Math.round(w * MAX / h); h = MAX; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const jpeg = canvas.toDataURL('image/jpeg', 0.72);
-      state.imageBase64 = jpeg.split(',')[1];
-      state.imageType = 'image/jpeg';
-      const sizeKB = Math.round(state.imageBase64.length * 0.75 / 1024);
-      console.log(`Image ready: ${w}×${h}px, ~${sizeKB}KB`);
-      show('stepPreview');
-      hide('stepUpload');
-      document.getElementById('imgPreview').src = jpeg;
-      document.getElementById('imgFileName').textContent = file.name;
-      hide('errorBox');
+function processFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 600;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const jpeg = canvas.toDataURL('image/jpeg', 0.72);
+        resolve({
+          id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2),
+          base64: jpeg.split(',')[1],
+          fileName: file.name,
+          previewSrc: jpeg,
+          status: 'pending',
+          receipt: null
+        });
+      };
+      img.src = e.target.result;
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFiles(files) {
+  const processed = await Promise.all(Array.from(files).map(processFile));
+  state.images.push(...processed);
+  hide('stepUpload');
+  show('stepPreview');
+  renderPreviews();
 }
 
 const dropZone = document.getElementById('dropZone');
@@ -617,24 +622,65 @@ dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-ove
 dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
 });
 
-// ─── Scan ─────────────────────────────────────────────────
-async function scanReceipt() {
-  const apiKey = document.getElementById('apiKeyInput').value.trim();
-  if (!apiKey) {
-    show('errorBox');
-    document.getElementById('errorBox').textContent = 'Please enter your OpenRouter API key above before scanning.';
-    return;
-  }
-  const btn = document.getElementById('scanBtn');
-  btn.disabled = true;
-  hide('errorBox');
-  hide('stepPreview');
-  show('stepScanning');
+function renderPreviews() {
+  const container = document.getElementById('previewGrid');
+  const allDone = state.images.length > 0 && state.images.every(i => i.status === 'done');
+  const anyScanning = state.images.some(i => i.status === 'scanning');
+  const hasPending = state.images.some(i => i.status === 'pending');
 
+  container.innerHTML = state.images.map(img => `
+    <div class="preview-card" id="card_${img.id}">
+      <img src="${img.previewSrc}" class="img-preview" alt="Receipt">
+      <div class="img-info">
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${img.fileName}</div>
+        <div class="preview-status" id="status_${img.id}">
+          ${statusBadge(img.status)}
+        </div>
+      </div>
+      <button class="preview-remove" onclick="removeImage('${img.id}')" title="Remove">✕</button>
+    </div>
+  `).join('');
+
+  // Add more button
+  container.innerHTML += `
+    <label class="add-more-card">
+      <input type="file" accept="image/*" multiple onchange="handleFiles(this.files)" style="display:none">
+      <div style="font-size:24px;margin-bottom:6px">＋</div>
+      <div style="font-size:13px;color:var(--text2)">Add receipt</div>
+    </label>
+  `;
+
+  const scanBtn = document.getElementById('scanAllBtn');
+  scanBtn.disabled = anyScanning || !hasPending && !allDone;
+  scanBtn.textContent = allDone ? '✓ All scanned' : anyScanning ? 'Scanning...' : `✨ Scan ${state.images.filter(i=>i.status==='pending').length} Receipt${state.images.filter(i=>i.status==='pending').length!==1?'s':''}`;
+
+  const proceedBtn = document.getElementById('proceedBtn');
+  if (allDone) proceedBtn.classList.remove('hidden');
+  else proceedBtn.classList.add('hidden');
+}
+
+function statusBadge(status) {
+  if (status === 'pending') return `<span style="font-size:12px;color:var(--text3)">Pending</span>`;
+  if (status === 'scanning') return `<span style="font-size:12px;color:var(--accent)">Scanning...</span>`;
+  if (status === 'done') return `<span style="font-size:12px;color:#1D9E75;font-weight:500">✓ Done</span>`;
+  if (status === 'error') return `<span style="font-size:12px;color:#C94070">Failed — tap to retry</span>`;
+}
+
+function removeImage(id) {
+  state.images = state.images.filter(i => i.id !== id);
+  if (state.images.length === 0) {
+    hide('stepPreview');
+    show('stepUpload');
+  } else {
+    renderPreviews();
+  }
+}
+
+// ─── Scan ─────────────────────────────────────────────────
+async function scanImage(img, endpoint) {
   const prompt = `Look at this receipt image carefully. Extract all line items and financial totals.
 Return ONLY a valid JSON object with this exact structure (no markdown, no explanation):
 {
@@ -645,7 +691,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
   "subtotal": 0,
   "service_charge_pct": 0,
   "service_charge_amt": 0,
-  "tax_label": "Tax label if any (e.g. PB1, VAT, GST)",
+  "tax_label": "Tax label if any e.g. PB1, VAT, GST",
   "tax_pct": 0,
   "tax_amt": 0,
   "grand_total": 0
@@ -657,62 +703,94 @@ Rules:
 - If no tax, set tax_pct and tax_amt to 0
 - Return ONLY the JSON object`;
 
-  try {
-    const proxyUrl = document.getElementById('proxyUrlInput').value.trim();
-    const endpoint = proxyUrl || 'https://openrouter.ai/api/v1/chat/completions';
-    console.log('Using endpoint:', endpoint);
-    console.log('Image size (chars):', state.imageBase64.length);
-    console.log('API key present:', apiKey.length > 0, '| starts with:', apiKey.slice(0, 8));
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'openrouter/free',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${state.imageBase64}` } }
-          ]
-        }]
-      })
-    });
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'openrouter/free',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${img.base64}` } }
+        ]
+      }]
+    })
+  });
 
-    if (!response.ok) {
-      const errBody = await response.json().catch(() => ({}));
-      console.error('API error body:', JSON.stringify(errBody));
-      const msg = errBody?.error?.message || `HTTP ${response.status}`;
-      throw new Error(msg);
-    }
-
-    const data = await response.json();
-    console.log('Response:', JSON.stringify(data).slice(0, 300));
-    const text = data.choices?.[0]?.message?.content || '';
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-
-    state.receipt = parsed;
-    state.people = [
-      { id: 'p1', name: 'You', color: COLORS[0] }
-    ];
-    state.assignments = {};
-    parsed.items.forEach(item => { state.assignments[item.id] = ['p1']; });
-
-    hide('stepScanning');
-    show('stepAssign');
-    renderAssign();
-  } catch (err) {
-    console.error('Scan error:', err);
-    hide('stepScanning');
-    show('stepPreview');
-    btn.disabled = false;
-    show('errorBox');
-    document.getElementById('errorBox').textContent =
-      'Could not read the receipt. (' + err.message + ')';
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({}));
+    const msg = errBody?.error?.message || `HTTP ${response.status}`;
+    throw new Error(msg);
   }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+async function scanAll() {
+  const endpoint = PROXY_URL;
+  if (!endpoint) {
+    alert('Please set your PROXY_URL constant.');
+    return;
+  }
+
+  const pending = state.images.filter(i => i.status === 'pending');
+  for (const img of pending) {
+    img.status = 'scanning';
+    renderPreviews();
+    try {
+      const receipt = await scanImage(img, endpoint);
+      img.receipt = receipt;
+      img.status = 'done';
+    } catch (err) {
+      console.error('Scan error for', img.fileName, err);
+      img.status = 'error';
+    }
+    renderPreviews();
+  }
+}
+
+function mergeReceipts() {
+  const receipts = state.images.filter(i => i.status === 'done').map(i => i.receipt);
+  if (receipts.length === 0) return null;
+
+  // Merge all items with globally unique IDs
+  let itemId = 1;
+  const allItems = [];
+  receipts.forEach(r => {
+    r.items.forEach(item => {
+      allItems.push({ ...item, id: itemId++ });
+    });
+  });
+
+  return {
+    restaurant: receipts.map(r => r.restaurant).filter(Boolean).join(' + '),
+    items: allItems,
+    subtotal: receipts.reduce((s, r) => s + (r.subtotal || 0), 0),
+    service_charge_pct: null,
+    service_charge_amt: receipts.reduce((s, r) => s + (r.service_charge_amt || 0), 0),
+    tax_label: receipts.find(r => r.tax_label)?.tax_label || 'Tax',
+    tax_pct: null,
+    tax_amt: receipts.reduce((s, r) => s + (r.tax_amt || 0), 0),
+    grand_total: receipts.reduce((s, r) => s + (r.grand_total || 0), 0),
+  };
+}
+
+function proceedToAssign() {
+  const merged = mergeReceipts();
+  if (!merged) return;
+  state.receipt = merged;
+  state.people = [{ id: 'p1', name: 'You', color: COLORS[0] }];
+  state.assignments = {};
+  merged.items.forEach(item => { state.assignments[item.id] = ['p1']; });
+  hide('stepPreview');
+  show('stepAssign');
+  renderAssign();
 }
 
 // ─── People ───────────────────────────────────────────────
@@ -890,8 +968,8 @@ function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
 function resetApp() {
-  state = { imageBase64: null, imageType: null, fileName: null, receipt: null, people: [], assignments: {} };
-  hide('stepPreview'); hide('stepScanning'); hide('stepAssign');
+  state = { images: [], receipt: null, people: [], assignments: {} };
+  hide('stepPreview'); hide('stepAssign');
   show('stepUpload');
   document.getElementById('fileInput').value = '';
 }
