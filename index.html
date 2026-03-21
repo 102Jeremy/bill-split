@@ -574,6 +574,14 @@ let state = {
 
 // ─── Config ───────────────────────────────────────────────
 const PROXY_URL = 'https://bill-splitter.ardienjeremy.workers.dev/';
+// Free vision models in priority order — if one fails, next is tried
+const VISION_MODELS = [
+  'mistralai/mistral-small-3.1-24b-instruct:free',
+  'google/gemma-3-27b-it:free',
+  'google/gemma-3-12b-it:free',
+  'moonshotai/kimi-vl-a3b-thinking:free',
+  'meta-llama/llama-3.2-11b-vision-instruct:free',
+];
 // ─────────────────────────────────────────────────────────
 
 // ─── File Handling ────────────────────────────────────────
@@ -680,7 +688,7 @@ function removeImage(id) {
 }
 
 // ─── Scan ─────────────────────────────────────────────────
-async function scanImage(img, endpoint) {
+async function scanImage(img, endpoint, model) {
   const prompt = `Look at this receipt image carefully. Extract all line items and financial totals.
 Return ONLY a valid JSON object with this exact structure (no markdown, no explanation):
 {
@@ -709,7 +717,7 @@ Rules:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'qwen/qwen2.5-vl-32b-instruct:free',
+      model: model,
       messages: [{
         role: 'user',
         content: [
@@ -746,12 +754,24 @@ async function scanAll() {
   for (const img of pending) {
     img.status = 'scanning';
     renderPreviews();
-    try {
-      const receipt = await scanImage(img, endpoint);
-      img.receipt = receipt;
-      img.status = 'done';
-    } catch (err) {
-      console.error('Scan error for', img.fileName, err);
+    let lastErr = null;
+    let success = false;
+    for (const model of VISION_MODELS) {
+      try {
+        console.log(`Trying model: ${model}`);
+        const receipt = await scanImage(img, endpoint, model);
+        img.receipt = receipt;
+        img.status = 'done';
+        console.log(`Success with model: ${model}`);
+        success = true;
+        break;
+      } catch (err) {
+        console.warn(`Model ${model} failed:`, err.message);
+        lastErr = err;
+      }
+    }
+    if (!success) {
+      console.error('All models failed for', img.fileName, lastErr);
       img.status = 'error';
     }
     renderPreviews();
