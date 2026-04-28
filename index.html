@@ -709,14 +709,8 @@ Rules:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'openrouter/free',
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${img.base64}` } }
-        ]
-      }]
+      imageBase64: img.base64,
+      prompt,
     })
   });
 
@@ -729,7 +723,7 @@ Rules:
 
   const data = await response.json();
   console.log('Raw response:', JSON.stringify(data).slice(0, 500));
-  const text = data.choices?.[0]?.message?.content || '';
+  const text = data.result || '';
   if (!text) throw new Error(data.error?.message || 'Empty response from model');
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
